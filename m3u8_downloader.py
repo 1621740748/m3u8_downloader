@@ -1,4 +1,4 @@
-# UTF-8
+# coding=utf-8
 # author hestyle
 # desc 必须在终端直接执行，不能在pycharm等IDE中直接执行，否则看不到动态进度条效果
 
@@ -20,11 +20,11 @@ headers = {
 
 ###############################配置信息################################
 # m3u8链接批量输入文件(必须是utf-8编码)
-m3u8InputFilePath = "D:/input/m3u8_input.txt"
+m3u8InputFilePath = "/data/video/m3u8_input.txt"
 # 设置视频保存路径
-saveRootDirPath = "D:/output"
+saveRootDirPath = "/data/output"
 # 下载出错的m3u8保存文件
-errorM3u8InfoDirPath = "D:/output/error.txt"
+errorM3u8InfoDirPath = "/data/output/error.txt"
 # m3u8文件、key文件下载尝试次数，ts流默认无限次尝试下载，直到成功
 m3u8TryCountConf = 10
 # 线程数（同时下载的分片数）
@@ -65,7 +65,7 @@ def getM3u8Info():
             return None
         tryCount = tryCount - 1
         try:
-            response = requests.get(m3u8Url, headers=headers, timeout=20)
+            response = requests.get(m3u8Url, headers=headers, timeout=60)
             if response.status_code == 301:
                 nowM3u8Url = response.headers["location"]
                 print("\t{0}重定向至{1}！".format(m3u8Url, nowM3u8Url))
@@ -73,15 +73,20 @@ def getM3u8Info():
                 m3u8Url = nowM3u8Url
                 rootUrlPath = m3u8Url[0:m3u8Url.rindex('/')]
                 continue
-            expected_length = int(response.headers.get('Content-Length'))
+            #expected_length = int(response.headers.get('Content-Length'))
             actual_length = len(response.content)
-            if expected_length > actual_length:
-                raise Exception("m3u8下载不完整")
+            #if expected_length > actual_length:
+            #    raise Exception("m3u8下载不完整")
             print("\t{0}下载成功！".format(m3u8Url))
             logFile.write("\t{0}下载成功！".format(m3u8Url))
             rootUrlPath = m3u8Url[0:m3u8Url.rindex('/')]
             break
-        except:
+        except Exception as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info() 
+            print('e.message:\t', exc_value)
+            print("Note, object e and exc of Class %s is %s the same." %(type(exc_value), ('not', '')[exc_value is e]))
+            print('traceback.print_exc(): ', traceback.print_exc())
+            print('traceback.format_exc():\n%s' % traceback.format_exc())
             print("\t{0}下载失败！正在重试".format(m3u8Url))
             logFile.write("\t{0}下载失败！正在重试".format(m3u8Url))
     # 解析m3u8中的内容
@@ -114,7 +119,7 @@ def getKey(keyUrl):
             return None
         tryCount = tryCount - 1
         try:
-            response = requests.get(keyUrl, headers=headers, timeout=20, allow_redirects=True)
+            response = requests.get(keyUrl, headers=headers, timeout=60, allow_redirects=True)
             if response.status_code == 301:
                 nowKeyUrl = response.headers["location"]
                 print("\t{0}重定向至{1}！".format(keyUrl, nowKeyUrl))
@@ -302,7 +307,7 @@ def m3uVideo8Downloader():
     # 4、合并ts
     print("\t4、开始合并ts...")
     logFile.write("\t4、开始合并ts...\n")
-    if mergeTs(cachePath, cachePath + "/cache.flv", cryptor, len(tsList)):
+    if mergeTs(cachePath, saveRootDirPath + "/" + title +".flv", cryptor, len(tsList)):
         print("\tts合并完成---------------------")
         logFile.write("\tts合并完成---------------------\n")
     else:
@@ -312,9 +317,10 @@ def m3uVideo8Downloader():
         return False
     # 5、开始转换成mp4
     print("\t5、开始mp4转换...")
-    logFile.write("\t5、开始mp4转换...\n")
-    if not ffmpegConvertToMp4(cachePath + "/cache.flv", saveRootDirPath + "/" + title + ".mp4"):
-        return False
+   # logFile.write("\t5、开始mp4转换...\n")
+   # if not ffmpegConvertToMp4(cachePath + "/cache.flv", saveRootDirPath + "/" + title + ".mp4"):
+   #     return False
+    
     return True
 
 
